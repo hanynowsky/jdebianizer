@@ -78,10 +78,10 @@ echo `java -version`
 # PROMPT INSTALL
 RUNINST() {
 eval COMMON;
-whiptail --yesno "Install/Uninstall Jayatana" "$LINES" "$COLUMNS" --yes-button "Install" --no-button "Uninstall" --backtitle "Ubuntu Global Menu Support for Java Swing Applications" --title "JDebianizer"
+whiptail --yesno "Install/Uninstall Jayatana (ESCAPE or CTRL+C to cancel)" "$LINES" "$COLUMNS" --yes-button "Install" --no-button "Uninstall" --backtitle "Ubuntu Global Menu Support for Java Swing Applications" --title "JDebianizer"
 if [ "$?" = 0  ]; then eval INSTALLCOM
 elif [ "$?" = 1 ]; then eval UNINSTALLCOM;eval UNDIR;
-else echo "Aborted by $USER";
+else echo "Aborted by $USER"; exit 0; # code returned by ESCAPE is 255
 fi
 }
 
@@ -778,7 +778,7 @@ fi
 echo "JDebianzier filename is: $0"
 filename=$(echo "$0" | sed -e 's/ /\\ /g' )
 echo "Modified JDebianizer filename is: $filename"
-if [ -f "$filename" ]; then bash "$filename"
+if [ -f "$filename" ]; then eval bash "$filename"
 else echo "Path to file is incorrect or contains trailing spaces. (e.g. .../Ubuntu One/....)"
 fi
 exit 0;
