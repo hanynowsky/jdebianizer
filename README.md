@@ -2,6 +2,7 @@ JDebianizer
 ===========
 
 Debianize Java Application.
+---------------------------
 
 1- Develop your Java application.
 
