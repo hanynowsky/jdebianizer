@@ -78,7 +78,6 @@ echo `java -version`
 # PROMPT INSTALL
 RUNINST() {
 eval COMMON;
-read -p "Enter ( i ) to install or ( u ) to uninstall : " option
 whiptail --yesno "Install/Uninstall Jayatana" "$LINES" "$COLUMNS" --yes-button "Install" --no-button "Uninstall" --backtitle "Ubuntu Global Menu Support for Java Swing Applications" --title "JDebianizer"
 if [ "$?" = 0  ]; then eval INSTALLCOM
 elif [ "$?" = 1 ]; then eval UNINSTALLCOM;eval UNDIR;
