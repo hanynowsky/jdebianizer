@@ -1,43 +1,68 @@
 #!/bin/bash
 
-# Title		:	JDebianizer
+# Title		    :	JDebianizer
 # Description 	: 	Script tested only in Ubuntu. 
-# 			This script is for Java developers who want to package a simple application for Ubuntu users as a Debian 				file.
-# Rules			DO NOT execute this script with root power (sudo). 
-#			The script will try to install md5deep needed to generate md5 sums.
-#			If no internet connection, md5sums will be used instead.
-#			JDebianizer is  onsole-only, so run it from Terminal or any other Shell.
-#			Script is compliant only with BASH & KSH. Don't run it with SH, ZSH, DASH..).
-# Usage		:	In order to run the JDebianizer, switch to current directory that contains the script
-# 			and enter: 
-# 			./jdebianizer 
-# 			or: 
-# 			cd /path/to/containing/folder && bash jdebianizer			
-# Dependencies	:	md5deep, whiptail, zenity		
-# Author 	: 	Hanine HAMZIOUI <hanynowsky@gmail.com> حنين
-# Version 	: 	1.0a
-# License	:	GNU GPL V3+
+# 			        This script is for Java developers who want to package a 
+#                   simple application for Ubuntu users as a Debian file.
+#                   It also allows installing Ubuntu Global Menu Support
+#                   for Java Swing Applications.
+# Rules			:   DO NOT execute this script with root power (sudo). 
+#			        The script will try to install md5deep needed to generate 
+#                   md5 sums.
+#			        If no internet connection, md5sums will be used instead.
+#			        JDebianizer is  Console-only, so run it from Terminal or 
+#                   any other Shell.
+#			        Script is compliant only with BASH & ZSH. 
+#                   Don't run it with SH, KSH, DASH..).
+#                   Before starting debianization, make sure you have the following:
+#                   - an SVG image to be used as the package ICON.
+#                   - the executable JAR renamed to your package's name in lowercase
+#                   - libraries (dependencies) on which your package depends
+# Usage		    :	In order to run the JDebianizer, switch to current directory
+#                   that contains the script and enter: 
+# 			        ./jdebianizer 
+# 			        or: 
+# 			        cd /path/to/containing/folder && bash jdebianizer
+# Dependencies	:	md5deep, whiptail, zenity
+# Author 	    : 	Hanine HAMZIOUI <hanynowsky@gmail.com> حنين
+# Version 	    : 	1.0
+# License	    :	GNU GPL V3+
+#               :   Copyright (C) 2011 Hanine HAMZIOUI <hanynowsky@gmail.com>
+#                   License GPLv3+: GNU GPL version 3 or later 
+#                   <http://gnu.org/licenses/gpl.html>.
+#                   This is free software: you are free to change and redistribute it.
+#                   There is NO WARRANTY, to the extent permitted by law.
+
 # Date created	:	Wed 14 Nov 2012 12:40:32 AM WET 
 
-# ----------------- TODO -----------------------------
+#o------------------------------------------------------------o------------------------------------------------------------o
+#|                          TODO 1                            |                     Several icon sizes                     |
+#o------------------------------------------------------------o------------------------------------------------------------o
+#o------------------------------------------------------------o------------------------------------------------------------o
+#|                          TODO 2                            |                          Verbosity                         |
+#o------------------------------------------------------------+------------------------------------------------------------o
+#|                          TODO 3                            |                 Javadoc: jh_installjavadoc                 |
+#o------------------------------------------------------------+------------------------------------------------------------o
+#|                          TODO 4                            |     Config file with multiple entries (Partially done)     |
+#o------------------------------------------------------------+------------------------------------------------------------o
+#|                          TODO 5                            |            Other folders (/etc /usr/share/menu)            |
+#o------------------------------------------------------------+------------------------------------------------------------o
+#|                          TODO 6                            |  Jar manifest file (e.g. read classpath /usr/share/java/*) |
+#o------------------------------------------------------------o------------------------------------------------------------o
 
-# TODO 1- add support for several icon sizes
-# TODO 2- add support for verbosity
-# TODO 3- add support for javadoc: jh_installjavadoc
-# TODO 4- add support for many config files
-# TODO 5- add support for other application folders (/etc /usr/share/menu)
-
-# -------------- Global variables ----------------------
+# -------------- GLOBAL----------------------
 JDVERSION="JDebianizer 1.0. \nCopyright (C) 2012 - 2013. Free Software Foundation, Inc.
 License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>.
 JDebianizer is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law. Written by Hanine HAMZIOUI."
+There is NO WARRANTY, to the extent permitted by law. Written by Hanine HAMZIOUI.\n
+<hanynowsky@gmail.com>"
 ROWS=$(echo "$LINES" | bc )
 COLS=$(echo "$COLUMNS" | bc)
 LOGFILE=$HOME/tmp/jdebianizer.log
 CONFIGFILE=$HOME/.config/jdebianizer.conf
 TEMPFILE=$HOME/tmp/jdtemp.log
 ZWINICON=/usr/share/icons/hicolor/48x48/apps/distributor-logo.png
+RESCUEICON=/usr/share/icons/HighContrast/scalable/devices/media-floppy.svg
 
 # ----------------Re-execute the SCRIPT-----
 restartscript(){
@@ -186,12 +211,20 @@ tput cup 14 15
 echo "2. Exit JDebianzer"
 tput cup 15 15
 echo "3. Install Jayatana (Ubuntu Global Menu Support for Java Swing Applications)"
-tput cup 17 15
-read -p "Enter your choice [ 1 / 2 / 3 ]  " choice
+tput cup 16 15
+echo "4. Remove configuration"
+tput cup 18 15
+read -p "Enter your choice [ 1 / 2 / 3 / 4 ]  or hit ENTER to start: " choice
 if [ "$choice" = "1" ] ; then echo "Starting JDebianizer..."
 elif [ "$choice" = "3" ] ; then tput sgr0; echo "Starting Jayatana installer..."; eval jayamain
-elif [ "$choice" = "2" ] ; then exit 0
-else echo "exiting JDebianizer"; exit 0
+elif [ "$choice" = "2" ] ; then clear; exit 0
+elif [ -z "$choice" ] || [ "$choice" = " "] ; then echo "Starting JDebianizer";tput clear
+elif [ "$choice" = "4" ] ; then 
+    if [ -f ${CONFIGFILE} ]; then rm ${CONFIGFILE}; 
+        else echo "No Config File was deleted. Not Found or not yet created."
+    fi
+    eval jayamain
+else echo "Exiting JDebianizer"; clear; exit 0
 fi
 tput clear
 tput sgr0
@@ -212,79 +245,164 @@ fi
 }
 
 # ---------------CONFIG File ------------------
+
 packpropform(){
 zenity --forms --text="Package Properties" --add-entry="Package-Name" --add-entry="Version" --add-entry="Maintainer-Name" --add-entry="Maintainer-Surname" --add-entry="Email" --add-entry="Homepage" --window-icon $ZWINICON --title "JDebianizer" > $TEMPFILE
+cat ${TEMPFILE} | sed -e 's#|#\n#g' > $LOGFILE
+c=0
+while read line; do
+valarray[c]=$(echo "${line}")
+if [ -z "${line}" ]; then echo "No Package property should be empty"; 
+whiptail --msgbox "No Package property should be empty. Please Retry from Scratch." "$LINES" "$COLUMNS"
+break && exit 0
+fi
+((c++))
+done < ${LOGFILE}
+echo "Appending to CONFIGFILE"
+echo "[PACKAGE]" >> "${CONFIGFILE}"
+echo "PACKNAME=${valarray[0]}" >> "$CONFIGFILE"
+echo "PVERSION=${valarray[1]}" >> "$CONFIGFILE"
+echo "MFNAME=${valarray[2]}" >> "$CONFIGFILE"
+echo "MSNAME=${valarray[3]}" >> "$CONFIGFILE"
+echo "MEMAIL=${valarray[4]}" >> "$CONFIGFILE"
+echo "HOMEPAGE=${valarray[5]}" >> "$CONFIGFILE"
 exitcode=$?
 eval exitoption;
 echo "Grabbed Package Properties"
 }
 
-parseconfig(){
-i=0
-while read line; do
-	if [[ "$line" =~ ^[^#]*= ]] 
-		then 
-		name[i]=$(echo $line | cut -d'=' -f 1) 
-		array[i]=$(echo $line | cut -d'=' -f 2)
-		((i++))
-		# echo "${array[i]}"
-	fi
-done < $CONFIGFILE
-}
-
-lineasvar(){ 
-cat $TEMPFILE | sed -e 's#|#\n#g' > $LOGFILE
-i=0
-while read line; do
-    	array[i]=$(echo "${line}")
-	if [ -z "${array[i]}" ] 
-		then echo "No field should be empty. Please Retry."; exit 0
-		else echo "${array[i]}"
-	fi
-	((i++))
-done < $LOGFILE
-
-echo "The entered item 1 is: ${array[0]}" | tr '[:upper:]' '[:lower:]'
-echo "The entered item 2 is: ${array[1]}" | tr '[:upper:]' '[:lower:]'
-echo "The entered item 3 is: ${array[2]}"
-echo "The entered item 4 is: ${array[3]}"
-echo "The entered item 5 is: ${array[4]}"
-echo "The entered item 6 is: ${array[5]}"
-rm $TEMPFILE
-}
-
-if [ -f "$CONFIGFILE" ] 
-	then whiptail --yesno "Config File Exists. Overwrite it?" 20 50
-		if [ "$?" -eq 0 ] 
-			then eval packpropform; eval lineasvar
-			else eval parseconfig; echo "Found config file for package ${array[0]}" 
-		fi
-	else echo "CONFIG FILE does not exist. Please enter package properties values."; eval packpropform; eval lineasvar
+lineasvar(){ # We could use $$TEMPFILE instead
+if [ -f "${TEMPFILE}" ]; then matchpack=$(cat ${TEMPFILE} | cut -d'|' -f 1)
+    else matchpack="UNKNOWN-VALUE";echo "TEMPFILE was not created. Impossible to find"
 fi
 
-PACKNAME=$(echo "${array[0]}" | tr '[:upper:]' '[:lower:]')  	# Package name : must be lowercase  "${PACKNAME,,}"
+narray=() # added this manually to prevent warnings: variable not declared
+warray=() # added this manually to prevent warnings: variable not declared
+i=0
+while read line; do 
+checkcon=$(echo "${line}" | grep  ^[^\\[]*) 
+	if [ "${checkcon}" = "[PACKAGE]" ] 
+		then echo "Header discovered ${line} with index $i";
+		narray[${#narray[@]}]="$i"
+	else array[i]="${line}"
+	fi
+	if [ -z "${line}" ]; then echo "No field should be empty. Please Retry."; 
+	whiptail --msgbox "No field should be empty. Retry." "$LINES" "$COLUMNS" 
+	# TODO should exit here
+	fi
+i=$((${i} + 1))
+done < "${CONFIGFILE}"
+
+arraylength=$(echo ${#array[*]} | bc)
+echo "Config file's elements number without header is: ${arraylength}"
+echo "------------------------------------"
+echo "Found ${#narray[*]} Package(s)"
+for ((j=0;j<${#narray[*]};j++)); do
+package=$(echo "${array[((${narray[j]} + 1))]}" | cut -d'=' -f 2)
+echo "Found Package \"${package}\" whose index is: $((${narray[j]} + 1))"
+warray[${#warray[@]}]="$((${narray[j]} + 1)) ${package} 0"  # tags, items & status for whiptail
+done
+
+whiparray=$(echo "${warray[*]}" | grep .)
+packindex=$(whiptail --radiolist "Select" 25 80 20 ${whiparray} "1" "DEFAULT" 1 --title "Configured Package Selection."  --backtitle "JDebianizer (Select with Keyboard SPACE)" 3>&1 1>&2 2>&3)
+y=$(echo ${packindex} | bc)
+
+spackinfo=$(
+echo "  "; echo -e "NAME: "; echo -e "${array[$y]} " | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]';
+echo "  "; echo -e "VERSION: "; echo "${array[(($y + 1))]} " | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]'; 
+echo "  "; echo -e "MAINTAINER FAMILY NAME: "; echo "${array[(($y + 2))]}  " | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]'; 
+echo "  "; echo -e "MAINTAINER SURNAME: "; echo "${array[(($y + 3))]}  " | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]'; 
+echo "  "; echo -e "MAINTAINER EMAIL: "; echo "${array[(($y + 4))]}  " | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]'; 
+echo "  "; echo -e "MAINTAINER/PACK HOMEPAGE: "; echo "${array[(($y + 5))]}  " | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]')
+
+whiptail --yesno "${USER} has picked the package with the following attributes: Confirm?\n$spackinfo" "$LINES" "$COLUMNS"
+if [ $? = 0 ]; then echo "${USER} confirmed. Continuing"
+else echo "exit code: $? Cancel? Ok..."; eval packpropform # TODO Call Package properties zenity
+fi
+
+echo "$USER has selected a package whose items 1, 2, 3, 4, 5 and 6 are: "
+echo "${array[$y]}" | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]'
+echo "${array[(($y + 1))]}" | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]'
+echo "${array[(($y + 2))]}" | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]'
+echo "${array[(($y + 3))]}" | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]'
+echo "${array[(($y + 4))]}" | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]'
+echo "${array[(($y + 5))]}" | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]'
+
+# Check Package Duplicate
+echo "Executing Duplicate Checker"
+PMATCH=$(echo "${matchpack}" | tr '[:upper:]' '[:lower:]')
+confnotempty=$(cat ${CONFIGFILE} | grep "\[")
+n=0
+while read line; do # TODO is it a good idea to keep several packs with the same name
+if [ -n "${confnotempty}" ] || [ -f "${TEMPFILE}" ]; then 
+valar[${#valar[@]}]=$(echo ${line} | cut -d'=' -f 2)
+pat=$(echo ${line} | grep -o ${PMATCH})
+    if [ "${pat}" = "${PMATCH}" ]; then echo "Found Match, delete existing entry?";
+    whiptail --yesno "A Package named $PMATCH indexed $n & versioned (${array[(($n + 1))]}) is already present. 
+    Overwrite it.?\nWE RECOMMEND OVERWRITING IT, IF DUPLICATE." "$LINES" "$COLUMNS"
+        if [ $? -eq 0 ]; then echo "Delete. Should append new package entry"; 
+        sed -i ${n},+6d ${CONFIGFILE} && break
+        else echo "Working with the existing package entry"
+        fi
+    else echo "No Match found, should append new entry" # break and do the rest
+    fi
+else echo "ConfigFile is empty"
+fi
+((n++))
+done < "${CONFIGFILE}"
+
+if [[ "${narray[0]}" =~ ^[^\\[]* ]]; then # TODO parse all file values
+    echo "Patterned seq is: ${narray[0]} & ${narray[1]} & ${narray[2]} & ..."
+else
+    echo "FATAL: A value in the config file is mispelt"
+fi
+
+PACKNAME=$(echo "${array[(($y + 0))]}" | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]')  	# lowercase  "${PACKNAME,,}"
 upperpackname=$(echo "${PACKNAME}" | sed 's/\([a-z]\)\([a-zA-Z0-9]*\)/\u\1\2/g')
-PVERSION=$(echo "${array[1]}" | tr '[:upper:]' '[:lower:]') 	# Package Ubuntu version
+PVERSION=$(echo "${array[(($y + 1))]}" | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]') 	# Package Ubuntu version
 ROOTDIR=$(echo $HOME/Desktop/$PACKNAME"_"$PVERSION | grep .)	# Root folder to debianize
 MAND="man"							# Workaround for key word man
-mfname=$(echo "${array[2]}" | tr '[:lower:]' '[:upper:]')
-msname=$(echo "${array[3]}" | sed 's/\([a-z]\)\([a-zA-Z0-9]*\)/\u\1\2/g')
+mfname=$(echo "${array[(($y + 2))]}" | cut -d'=' -f 2 | tr '[:lower:]' '[:upper:]')
+msname=$(echo "${array[(($y + 3))]}" | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]' | sed 's/\([a-z]\)\([a-zA-Z0-9]*\)/\u\1\2/g')
 maintainer="$msname $mfname"
-memail=$(echo "<${array[4]}>" | tr '[:upper:]' '[:lower:]')
-homepage=$(echo "${array[5]}" | tr '[:upper:]' '[:lower:]')
+memail=$(echo "${array[(($y + 4))]}" | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]')
+homepage=$(echo "${array[(($y + 5))]}" | cut -d'=' -f 2 | tr '[:upper:]' '[:lower:]')
+}
 
-# --------------- Append Config File ------------------ 
-echo "[PACKAGE]" > "$CONFIGFILE" # TODO before appending check for duplicates by PACKNAME
+appends() {
+echo "Appending to CONFIGFILE"
+echo "[PACKAGE]" >> "$CONFIGFILE" 
 echo "PACKNAME=${PACKNAME}" >> "$CONFIGFILE"
 echo "PVERSION=${PVERSION}" >> "$CONFIGFILE"
 echo "MFNAME=${mfname}" >> "$CONFIGFILE"
 echo "MSNAME=${msname}" >> "$CONFIGFILE"
-echo "MEMAIL=${memail}" >> "$CONFIGFILE"
+echo "MEMAIL=<${memail}>" >> "$CONFIGFILE"
 echo "HOMEPAGE=${homepage}" >> "$CONFIGFILE"
+}
+
+appendconf(){
+appenchek=$(cat ${CONFIGFILE} | grep -o ${PMATCH})
+if [ ! "${appenchek}" = "${array[$y]}" ]; then eval appends
+else echo "No Config Appending: PACKNAME is there already."
+fi
+}
+
+if [ -f "${CONFIGFILE}" ] 
+	then whiptail --yesno "Config File Exists. \nYes = New Package Entry | \nNo = Existing Package Entry" 20 50 --defaultno
+		if [ "$?" -eq 0 ] 
+			then eval packpropform; eval lineasvar; # eval appendconf
+			else eval lineasvar; echo "Found config file for package ${array[0]}"; # TODO eval appendconf
+		fi
+	else echo "CONFIG FILE does not exist. Please enter package properties values."; 
+	eval packpropform; eval lineasvar; # eval appendconf
+fi
+
+if [ -f ${TEMPFILE} ]; then rm ${TEMPFILE}
+fi
 
 # ------------- Desktop File variables ----------------
-PICON="/usr/share/icons/hicolor/48x48/apps/$PACKNAME.png"		# Desktop file Icon
-COMMENT=$(echo "${PACKNAME} $PVERSION - A Java based Application" sed 's/\([a-z]\)\([a-zA-Z0-9]*\)/\u\1\2/g')	
+PICON="/usr/share/icons/hicolor/scalable/apps/$PACKNAME.svg"		# Desktop file Icon
+COMMENT=$(echo "${PACKNAME} $PVERSION - A Java based Application" | sed 's/\([a-z]\)\([a-zA-Z0-9]*\)/\u\1\2/g')	
 									# Desktop file comment
 GENAME=$(echo "${PACKNAME}"|sed 's/\([a-z]\)\([a-zA-Z0-9]*\)/\u\1\2/g')	# Desktop file generic name
 DNAME=$(echo "${PACKNAME}"| sed 's/\([a-z]\)\([a-zA-Z0-9]*\)/\u\1\2/g')	# Desktop file application name - First letter is 
@@ -334,6 +452,7 @@ fi
 eval create_dirs;
 
 # ------------------Copy LIBRARIES & main binary EXECUTABLE-----
+
 sudo chmod 777 -R $ROOTDIR # Give full permission to allow writing
 libpath=$(zenity --file-selection --directory --title "Select the folder containing jars")
 exitcode=$?
@@ -358,6 +477,7 @@ if [ $a -gt $result ]; then echo "folder has $CHECKFILES files, $CHECKJARS being
 echo "But we have not copied them. Copied only jar files."
 else echo "No files beside jar files on $libpath. Great! Let us continue." 
 fi
+
 # --------------------------------------------------------------
 
 echo "Working on: "$ROOTDIR " for debianizing package $PACKNAME" | grep .
@@ -390,7 +510,7 @@ exitcode=$?
 eval exitoption;
 echo "Additional Desktop categories confirmed."
 CATEGORIES=$(echo "$MCATGET"";""$ACATGET" | sed -e 's# #;#g' -e 's#"##g')	# Desktop file Categories
-CATOTHER=$(whiptail --inputbox "Any other categories to add (Seperate by semi-comma). Leave blank if none." 10 30 3>&1 1>&2 2>&3 | sed -e 's# ##g' -e 's#[^a-zA-Z\;]##g')							# Desktop Other categories
+CATOTHER=$(whiptail --inputbox "Any other categories to add (Seperate by semi-comma). Leave blank if none." 10 30 3>&1 1>&2 2>&3 | sed -e 's# ##g' -e 's#[^a-zA-Z\;]##g')							                # Desktop Other categories
 
 desktop-file-edit --add-category $CATEGORIES $DESKFILE
 CATOTHERF=$("${CATOTHER}" | tr '[:upper:]' '[:lower:]')
@@ -400,12 +520,17 @@ echo "X-Ubuntu-Gettext-Domain=$PACKNAME" >> $DESKFILE
 }
 
 pastedicon(){
-LOCICON=$(zenity --file-selection --file-filter "*.png" --title "Select Your package Icon (PNG format and 48x48 resolution)")
+LOCICON=$(zenity --file-selection --file-filter "*.svg" --title "Select Your package Icon (SVG format)")
 exitcode=$?
 eval exitoption;
 echo "Desktop Icon confirmed."
 if [ -r $LOCICON ]; then cp -v -u $LOCICON "${ROOTDIR}${PICON}"
-else echo "No PNG Icon found"; whiptail --msgbox "No PNG found. Exiting" $ROWS $COLS; exit 0
+else echo "No SVG Icon found"; 
+whiptail --msgbox "No SVG icon found. Using a default one. ${ZWINICON}" "${LINES}" "${COLUMNS}";
+if [ -f ${ZWINICON} ] 
+then cp -v -u ${ZWINICON} "${ROOTDIR}${PICON}"
+else cp -v -u ${RESCUEICON} "${ROOTDIR}${PICON}"
+fi
 fi
 }
 
@@ -432,8 +557,9 @@ sectionvalue=$(whiptail --inputbox "Enter the appropriate Control Section amongs
 for (( s=0; s < ${#sectionstring[*]}; s++ )); do
 lowersectv=$(echo "${sectionvalue}" | tr '[:upper:]' ':lower:')
 if [ "${lowersectv}" = "${sectionstring[s]}" ] 
-then section="${lowersectv}"; echo "It is okay. We have found your control section listed."
-else section="java"; echo "Warriga, what you have typed does not figure in the Debian control section list...:(" 2>/dev/null
+then section="${lowersectv}"; echo "It is okay. We have found your control section listed." && break
+else section="java" 
+echo "Warriga, still looking for what you have typed in the Debian control section list...:(" 2>/dev/null
 fi
 done	
 echo "Control file section property confirmed."
@@ -461,7 +587,7 @@ echo "Section: ${section}" >> $CONTFILE
 echo "Priority: ${priority}" >> $CONTFILE
 echo "Architecture: ${architecture}" >> $CONTFILE
 echo "Depends: $depends" >> $CONTFILE
-echo "Maintainer: $maintainer $memail" >> $CONTFILE
+echo "Maintainer: $maintainer <$memail>" >> $CONTFILE
 echo "Installed-Size: $instsize" >> $CONTFILE
 echo "Homepage: $homepage">> $CONTFILE
 echo -e "Description: $description\r" >> $CONTFILE
@@ -558,8 +684,9 @@ argfu \$@;" >> $FBINARY
 echo "java -jar \$EXECBIN/$PACKNAME.jar \$*" >> $FBINARY
 
 # ---------------- AUTHORS File ---------------
+echo "Writing AUTHORS"
 writeauth(){
-echo "$maintainer $memail" > $DOCDIR/AUTHORS
+echo "$maintainer <$memail>" > $DOCDIR/AUTHORS
 echo "Surname FAMILYNAME <authoremailusername@domain.ext>" | zenity --text-info --title "Other Authors" --editable --height=200 --width=490 >> $DOCDIR/AUTHORS
 }
 if [ -f "$DOCDIR/AUTHORS" ]; then whiptail --yesno "AUTHORS file exists. Overwrite it?" "$LINES" "$COLUMNS"
@@ -568,19 +695,21 @@ else echo "The existing AUTHORS file is kept."
 fi
 else eval writeauth
 fi
+echo "AUTHORS wrote"
 
 # ---------------- COPYRIGHT File ----------
+echo "Writing copyright"
 writecopy(){
 PSOURCE=$(whiptail --inputbox "Enter Package Source code repository here: " 25 50 "http://" 3>&1 1>&2 2>&3)
 PLICENSE=$(whiptail --radiolist "Choose Copyright License" 25 50 14 "BSD" 0 "GPL" 0 "GPL-1" 0 "GPL-2" 0 "GPL-3" 1 "LGPL" 0 "LGPL-2" 0 "LGPL-2.1" 0 "LGPL-3" 0 "GFDL-1.3" 0 "GFDL-1.2" 0 "GFDL" 0 "Artistic" 0 "Apache-2.0" 0 --noitem 3>&1 1>&2 2>&3)
 echo "Format: http://svn.debian.org/wsvn/dep/web/deps/dep5.mdwn?op=file&rev=REVISION" > $DOCDIR/copyright
 echo "Upstream-Name: $PACKNAME" >> $DOCDIR/copyright
-echo "Upstream-contact: $maintainer $memail" >> $DOCDIR/copyright
+echo "Upstream-contact: $maintainer <$memail>" >> $DOCDIR/copyright
 echo "Source: $PSOURCE" >> $DOCDIR/copyright
 echo -e "\n" >> $DOCDIR/copyright
 echo "Files: *" >> $DOCDIR/copyright
 cyear=$(date +%Y)
-echo "Copyright: Copyright $cyear $maintainer $memail" >> $DOCDIR/copyright
+echo "Copyright: Copyright $cyear $maintainer <$memail>" >> $DOCDIR/copyright
 echo "License: $PLICENSE" >> $DOCDIR/copyright
 echo " " >> $DOCDIR/copyright
 echo -e "\n" >> $DOCDIR/copyright
@@ -596,8 +725,10 @@ else echo "The existing Copyright file is kept."
 fi
 else eval writecopy
 fi
+echo "copyright wrote."
 
 # --------------------README File ------------
+echo "Writing README"
 writereadme(){
 READMETEXT=$(echo "" | zenity --text-info --title "Edit README file" --editable)
 echo -e "${upperpackname}. ${PVERSION}\n" > $DOCDIR/README
@@ -609,28 +740,34 @@ GZFILEN="README"
 GZFILE="$DOCDIR/README"
 GZFUN="writereadme"
 gzaction(){
-if [ -f "$GZFILE" ] && [ -f "$GZFILE.gz" ]; then whiptail --yesno "$GZFILEN & $GZFILEN.gz files exist. Overwrite GZIPED file?" "$LINES" "$COLUMNS"
+if [ -f "$GZFILE" ] && [ -f "$GZFILE.gz" ] 
+then whiptail --yesno "$GZFILEN & $GZFILEN.gz files exist. Overwrite GZIPED file?" "$LINES" "$COLUMNS"
 if [ "$?" -eq 1 ]; then rm -v "$GZFILE"
 else whiptail --yesno "Gzip existing $GZFILEN file (yes) & Create new $GZFILEN file (no)" "$LINES" "$COLUMNS"
 if [ "$?" -eq 0 ]; then gzip -v -f -9 $GZFILE
 else eval $GZFUN; gzip -v -f -9 $GZFILE
 fi
 fi
-elif [ ! -f "$GZFILE" ] && [ -f "$GZFILE.gz" ]; then whiptail --yesno "$GZFILEN.gz file exist. Overwrite it?" "$LINES" "$COLUMNS"
+elif [ ! -f "$GZFILE" ] && [ -f "$GZFILE.gz" ] 
+then whiptail --yesno "$GZFILEN.gz file exist. Overwrite it?" "$LINES" "$COLUMNS"
 if [ "$?" -eq 1 ]; then echo "Keeping exisiting $GZFILEN.gz"
 else eval $GZFUN; gzip -v -f -9 $GZFILE
 fi
-elif [ -f "$GZFILE" ] && [ ! -f "$GZFILE.gz" ]; then whiptail --yesno "$GZFILEN file exist. Overwrite it?" "$LINES" "$COLUMNS"
+elif [ -f "$GZFILE" ] && [ ! -f "$GZFILE.gz" ] 
+then whiptail --yesno "$GZFILEN file exist. Overwrite it?" "$LINES" "$COLUMNS"
 if [ "$?" -eq 1 ]; then gzip -v -f -9 $GZFILE
 else eval $GZFUN; gzip -v -f -9 $GZFILE
 fi
-elif [ ! -f "$GZFILE" ] && [ ! -f "$GZFILE" ]; then $GZFUN; gzip -v -f -9 $GZFILE
+elif [ ! -f "$GZFILE" ] && [ ! -f "$GZFILE" ] 
+then $GZFUN; gzip -v -f -9 $GZFILE
 else echo "Nothing done for $GZFILEN file."
 fi
 }
 eval gzaction
+echo "README wrote"
 
 # ------------------- NEWS File --------------
+echo "Writing NEWS"
 TODAY=$(echo $(date +%a", "%d" "%b" "%Y" "%H:%M:%S" "%z))
 writenews(){
 echo -e "${upperpackname} $PVERSION:
@@ -652,8 +789,10 @@ GZFILEN="NEWS"
 GZFILE="$DOCDIR/NEWS"
 GZFUN="writenews"
 eval gzaction
+echo "News Wrote"
 
 # ------------------- CHANGELOG.DEBIAN File --------------
+echo "Writing changelog"
 writeclog(){
 echo "Writing changelog.Debian"
 echo -e "$PACKNAME ($PVERSION) stable; urgency=low
@@ -663,7 +802,7 @@ echo -e "$PACKNAME ($PVERSION) stable; urgency=low
 
   * Added New Icons.
 
- -- $maintainer $memail  $TODAY" > $DOCDIR/changelog.Debian
+ -- $maintainer <${memail}>  $TODAY" > $DOCDIR/changelog.Debian
 readclog=$(cat $DOCDIR/changelog.Debian | zenity --text-info --title "Edit changelog.Debian File" --editable --width=500 --height=500) 
 echo -e "$readclog" > $DOCDIR/changelog.Debian
 }
@@ -672,8 +811,10 @@ GZFILEN="changelog.Debian"
 GZFILE="$DOCDIR/changelog.Debian"
 GZFUN="writeclog"
 eval gzaction
+echo "Changelog Wrote"
 
 # ------------------- TODO_File --------------
+echo "Writing TODO"
 writetodo(){
 TODOLIST=$(echo -e "1- Add feature X.\n" | zenity --text-info --title "TODO LIST EDITOR" --editable)
 echo "TODO LIST: " > $DOCDIR/TODO
@@ -686,8 +827,10 @@ else echo "The existing TODO file is kept."; export readtodo=$(cat $DOCDIR/TODO 
 fi
 else eval writetodo
 fi
+echo "TODO wrote"
 
 # ------------------THANKS File ----------------
+echo "Writing THANKS"
 writethanks(){
 THANKSTEXT=$(echo -e "1- Special thanks go to: \n" | zenity --text-info --title "THANKS File EDITOR" --editable)
 echo "$THANKSTEXT" >> $DOCDIR/THANKS
@@ -698,14 +841,16 @@ else echo "The existing THANKS file is kept."; export readthx=$(cat $DOCDIR/THAN
 fi
 else eval writethanks
 fi
+echo "Thanks Wrote"
 
 # ----------------- MANUAL File---------------------
+echo "Writing MANUAL $MANDIR/$PACKNAME.1"
 MANFILE=$MANDIR/$PACKNAME.1
 
 writeman(){
 MANDATE=$(date "+%Y-%m-%d")
-SHORTDESC=$(whiptail --inputbox "Manual file Short description: " "$LINES" "$COLUMNS" "Body Mass Index Computer")
-LONGDESC=$(whiptail --inputbox "Manual file Long description: " "$LINES" "$COLUMNS" "A tiny Java application that calculates your body mass index.")
+SHORTDESC=$(whiptail --inputbox "Manual file Short description: " "$LINES" "$COLUMNS" "Body Mass Index Computer" 3>&1 1>&2 2>&3)
+LONGDESC=$(whiptail --inputbox "Manual file Long description: " "$LINES" "$COLUMNS" "A tiny Java application that calculates your body mass index." 3>&1 1>&2 2>&3)
 
 echo ".TH ${PACKNAME} 1 $MANDATE ${PACKNAME} ${PACKNAME}" > $MANFILE
 echo ".SH NAME" >> $MANFILE
@@ -729,7 +874,8 @@ echo ".TP" >> $MANFILE
 echo "\\\fB\--version\\\fR, \\\fB\-\-v\\\fR" >> $MANFILE
 echo "Show version info." >> $MANFILE
 echo ".SH AUTHORS" >> $MANFILE
-echo "- ${maintainer} (${memail:1:(( ${#memail} - 2 ))}) - ${homepage}" >> $MANFILE
+mail=$(echo "<${memail}>")
+echo "- ${maintainer} (${mail:1:(( ${#mail} - 2 ))}) - ${homepage}" >> $MANFILE
 manv=$(cat $MANFILE | zenity --text-info --title "Edit Manual File" --editable --width=500 --height=500) 
 echo -e "$manv" > $MANFILE
 }
@@ -737,7 +883,7 @@ GZFILEN="${PACKNAME}.1"
 GZFILE=${MANDIR}/${PACKNAME}.1
 GZFUN="writeman"
 eval gzaction
-
+echo "MANUAL Wrote"
 # ----------------- Other DOCS ---------------------------
 otherdocs=$(zenity --file-selection --title "Select other files to include - Cancel if none" --multiple)
 transodocs=$(echo "$otherdocs" | sed 's#|# #g')
@@ -793,30 +939,32 @@ else eval md5classic
 fi
 
 chmod 644 $ROOTDIR/DEBIAN/md5sums
-echo "MD5 Sums written in: " " $ROOTDIR/DEBIAN/md5sums"  
+echo "MD5 Sums written in: " " ${ROOTDIR}/DEBIAN/md5sums"  
 
 # ------------- DEBIAN PACKAGER---------------
 echo "Executing debian builder"
-fakeroot dpkg-deb -v --build $ROOTDIR
+fakeroot dpkg-deb -v --build ${ROOTDIR}
 
 # ------------- LINTIAN ----------------------  
 echo "Executing Lintian & Desktop file validator"
 datum=$(eval echo $(date +%Y/%m/%d/:%H:%M:%S))
-echo $datum > $LOGFILE
-lintian -v -i $ROOTDIR.deb | tee -a $LOGFILE | zenity --progress --text "Validating $PACKNAME..." --percentage 10 --pulsate --auto-close --no-cancel
-desktop-file-validate $ROOTDIR/usr/share/applications/$PACKNAME.desktop >> $LOGFILE 
-linte=$(cat $LOGFILE | grep "E:")
-lintw=$(cat $LOGFILE | grep "W:")
-if [ -n "$linte" ]; then lemsg="ERRORS"; export nsicon="error"
-elif [ -n "$lintw" ]; then lwmsg="WARNINGS"; export nsicon="error"
+echo $datum > ${LOGFILE}
+lintian -v -i ${ROOTDIR}.deb | tee -a $LOGFILE | zenity --progress --text "Validating ${PACKNAME}..." --percentage 10 --pulsate --auto-close --no-cancel
+desktop-file-validate ${ROOTDIR}/usr/share/applications/${PACKNAME}.desktop >> ${LOGFILE} 
+linte=$(cat ${LOGFILE} | grep "E:")
+lintw=$(cat ${LOGFILE} | grep "W:")
+if [ -n "${linte}" ]; then lemsg="ERRORS"; export nsicon="error"
+elif [ -n "${lintw}" ]; then lwmsg="WARNINGS"; export nsicon="error"
 else lmsg="no errors, nor warnings."; export nsicon="emblem-default"
 fi
-FINSTALTEXT="finished Debianization of $PACKNAME at $datum with $lmsg$lemsg / $lwmsg. Check $LOGFILE though for warnings (W:) or errors (E:) and correct them by running JDebianizer again. If not, proceed with the Debian file installation. "
-notify-send -u low -a JDebianizer -i $nsicon "JDebianizer" "Finished with $lmsg.\n$lemsg\n$lwmsg" -t 1000
-whiptail --textbox $LOGFILE 20 80
-whiptail --msgbox "$FINSTALTEXT" 20 80
-whiptail --yesno "Install the_produced Debian file? $ROOTDIR.deb" 20 80
-if [ "$?" -eq 0 ]; then echo "Trying to install the Debian file.";sudo dpkg -i $ROOTDIR.deb
+FINSTALTEXT="finished Debianization of ${PACKNAME} at ${datum} with ${lmsg$lemsg} / ${lwmsg}. Check ${LOGFILE} though for warnings (W:) or errors (E:) and correct them by running JDebianizer again. If not, proceed with the Debian file installation. "
+notify-send -u low -a JDebianizer -i ${nsicon} "JDebianizer" "Finished with ${lmsg}.\n${lemsg}\n${lwmsg}" -t 1000
+whiptail --textbox ${LOGFILE} 20 80
+whiptail --msgbox "${FINSTALTEXT}" 20 80
+
+# ----------------INSTALL THE DEBIAN --------------------
+whiptail --yesno "Install the_produced Debian file? ${ROOTDIR}.deb" 20 80
+if [ "$?" -eq 0 ]; then echo "Trying to install the Debian file.";sudo dpkg -i ${ROOTDIR}.deb
 else whiptail --textbox "Script finished. You can install the produced Debian file manually." 20 80
 fi
 
