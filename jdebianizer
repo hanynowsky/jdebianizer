@@ -45,7 +45,7 @@
 #o------------------------------------------------------------+------------------------------------------------------------o
 #|                          TODO 4                            |     Config file with multiple entries (Partially done)     |
 #o------------------------------------------------------------+------------------------------------------------------------o
-#|                          TODO 5                            |            Other folders (/etc /usr/share/menu)            |
+#|                          TODO 5                            |            Other folders (/etc /opt /usr/share/menu)       |
 #o------------------------------------------------------------+------------------------------------------------------------o
 #|                          TODO 6                            |  Jar manifest file (e.g. read classpath /usr/share/java/*) |
 #o------------------------------------------------------------o------------------------------------------------------------o
@@ -218,7 +218,7 @@ read -p "Enter your choice [ 1 / 2 / 3 / 4 ]  or hit ENTER to start: " choice
 if [ "$choice" = "1" ] ; then echo "Starting JDebianizer..."
 elif [ "$choice" = "3" ] ; then tput sgr0; echo "Starting Jayatana installer..."; eval jayamain
 elif [ "$choice" = "2" ] ; then clear; exit 0
-elif [ -z "$choice" ] || [ "$choice" = " "] ; then echo "Starting JDebianizer";tput clear
+elif [ -z "$choice" ] || [ "$choice" = " " ] ; then echo "Starting JDebianizer";tput clear
 elif [ "$choice" = "4" ] ; then 
     if [ -f ${CONFIGFILE} ]; then rm ${CONFIGFILE}; 
         else echo "No Config File was deleted. Not Found or not yet created."
@@ -444,7 +444,7 @@ LIBDIR="$ROOTDIR/usr/share/$PACKNAME/lib"
 if [ ! -d "$LIBDIR" ]; then mkdir -p $LIBDIR; echo "Created lib folder"
 else echo "lib folder exists.Ok. Skipping."
 fi
-DICONDIR="$ROOTDIR/usr/share/icons/hicolor/48x48/apps"
+DICONDIR="$ROOTDIR/usr/share/icons/hicolor/scalable/apps"
 if [ ! -d "$DICONDIR" ]; then mkdir -p $DICONDIR; echo "Created icon folder"
 else echo "icon folder exists.Ok. Skipping."
 fi
@@ -528,8 +528,8 @@ if [ -r $LOCICON ]; then cp -v -u $LOCICON "${ROOTDIR}${PICON}"
 else echo "No SVG Icon found"; 
 whiptail --msgbox "No SVG icon found. Using a default one. ${ZWINICON}" "${LINES}" "${COLUMNS}";
 if [ -f ${ZWINICON} ] 
-then cp -v -u ${ZWINICON} "${ROOTDIR}${PICON}"
-else cp -v -u ${RESCUEICON} "${ROOTDIR}${PICON}"
+then chmod -x ${ZWINICON}; cp -v -u ${ZWINICON} "${ROOTDIR}${PICON}"
+else chmod -x ${RESCUEICON}; cp -v -u ${RESCUEICON} "${ROOTDIR}${PICON}"
 fi
 fi
 }
@@ -900,7 +900,7 @@ fi
 sudo chmod 644 -v $ROOTDIR/DEBIAN/control
 sudo chmod 644 -v $ROOTDIR/usr/share/doc/$PACKNAME/*
 sudo chmod 644 -v $ROOTDIR/usr/share/applications/*
-sudo chmod 644 -v $ROOTDIR/usr/share/icons/hicolor/48x48/apps/*
+sudo chmod 644 -v $ROOTDIR/usr/share/icons/hicolor/scalable/apps/*
 sudo chmod 644 -v $ROOTDIR/usr/share/$MAND/man1/*
 sudo chmod 644 -v $ROOTDIR/usr/share/$PACKNAME/lib/*;
 JARPATH="$ROOTDIR/usr/share/$PACKNAME/$PACKNAME.jar" 
@@ -957,7 +957,8 @@ if [ -n "${linte}" ]; then lemsg="ERRORS"; export nsicon="error"
 elif [ -n "${lintw}" ]; then lwmsg="WARNINGS"; export nsicon="error"
 else lmsg="no errors, nor warnings."; export nsicon="emblem-default"
 fi
-FINSTALTEXT="finished Debianization of ${PACKNAME} at ${datum} with ${lmsg$lemsg} / ${lwmsg}. Check ${LOGFILE} though for warnings (W:) or errors (E:) and correct them by running JDebianizer again. If not, proceed with the Debian file installation. "
+FINSTALTEXT="finished Debianization of ${PACKNAME} at ${datum} with ${lmsg}${lemsg} - ${lwmsg}. Check ${LOGFILE} though for warnings (W:) or errors (E:) and correct them by running JDebianizer again. If not, proceed with the Debian file installation."
+echo "${FINSTALTEXT}"
 notify-send -u low -a JDebianizer -i ${nsicon} "JDebianizer" "Finished with ${lmsg}.\n${lemsg}\n${lwmsg}" -t 1000
 whiptail --textbox ${LOGFILE} 20 80
 whiptail --msgbox "${FINSTALTEXT}" 20 80
